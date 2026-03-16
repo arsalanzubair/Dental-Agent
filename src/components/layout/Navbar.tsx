@@ -1,5 +1,5 @@
 import React from 'react';
-import { PanelLeftClose, PanelLeftOpen, Search, Sun, Moon, Bell, User, LogOut, MapPin } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Search, Sun, Moon, User, LogOut, MapPin } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocations } from '../../contexts/LocationContext';
@@ -7,26 +7,17 @@ import { useLocations } from '../../contexts/LocationContext';
 interface NavbarProps {
     isSidebarOpen: boolean;
     setIsSidebarOpen: (open: boolean) => void;
-    showNotifications: boolean;
-    setShowNotifications: (show: boolean) => void;
 }
 
 export function Navbar({
     isSidebarOpen,
-    setIsSidebarOpen,
-    showNotifications,
-    setShowNotifications
+    setIsSidebarOpen
 }: NavbarProps) {
     const { theme, toggleTheme } = useTheme();
     const { user, logout, role } = useAuth();
     const { locations, selectedLocation, setSelectedLocation } = useLocations();
     const [showUserMenu, setShowUserMenu] = React.useState(false);
 
-    // Mock notifications
-    const notifications = [
-        { id: 1, text: "New booking: Sarah Johnson", time: "2 mins ago", type: "new" },
-        { id: 2, text: "Appointment cancelled: Mike Ross", time: "1 hour ago", type: "cancelled" },
-    ];
 
     return (
         <header className="navbar">
@@ -49,23 +40,6 @@ export function Navbar({
                 </div>
 
                 <div className="divider-v"></div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <MapPin size={18} style={{ color: 'var(--muted)' }} />
-                    <select
-                        className="search-input"
-                        style={{ paddingLeft: '12px', width: 'auto', border: 'none', backgroundColor: 'transparent', fontWeight: '700', fontSize: '13px' }}
-                        value={selectedLocation?.id || ''}
-                        onChange={(e) => {
-                            const loc = locations.find(l => l.id === e.target.value);
-                            if (loc) setSelectedLocation(loc);
-                        }}
-                    >
-                        {locations.map(loc => (
-                            <option key={loc.id} value={loc.id}>{loc.name}</option>
-                        ))}
-                    </select>
-                </div>
             </div>
 
             <div className="navbar-right">
@@ -77,38 +51,6 @@ export function Navbar({
                     {theme === 'dark' ? <Sun size={20} style={{ color: '#fbbf24' }} /> : <Moon size={20} />}
                 </button>
 
-                <div className="notification-trigger">
-                    <button
-                        onClick={() => setShowNotifications(!showNotifications)}
-                        className="btn"
-                        style={{ padding: '10px', backgroundColor: 'transparent', borderRadius: '12px', position: 'relative' }}
-                    >
-                        <Bell size={20} />
-                        <span className="dot-badge"></span>
-                    </button>
-
-                    {showNotifications && (
-                        <div className="card notification-dropdown">
-                            <div className="notification-header">
-                                <span>Notifications</span>
-                                <button style={{ color: 'var(--primary)', border: 'none', background: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Clear all</button>
-                            </div>
-                            <div className="notification-list">
-                                {notifications.map(n => (
-                                    <div key={n.id} className="notification-item">
-                                        <div className="notification-item-icon">
-                                            <Bell size={16} />
-                                        </div>
-                                        <div>
-                                            <p style={{ fontSize: '13px', fontWeight: '600' }}>{n.text}</p>
-                                            <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>{n.time}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
 
                 <div className="divider-v"></div>
 

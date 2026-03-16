@@ -4,6 +4,7 @@ import { Appointment, useAppointments } from '../../hooks/useAppointments';
 import { Badge } from '../ui/Badge';
 import { format, isValid } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocations } from '../../contexts/LocationContext';
 
 function safeFormat(dateStr: string | undefined | null, fmt: string, fallback = 'N/A'): string {
     if (!dateStr) return fallback;
@@ -22,10 +23,9 @@ interface AppointmentTableProps {
 export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDelete }: AppointmentTableProps) {
     const { appointments, loading, error } = useAppointments();
     const { role } = useAuth();
+    const { locations } = useLocations();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8;
 
     const filteredAppointments = appointments.filter((apt) => {
         const matchesSearch =
@@ -37,10 +37,6 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
 
         return matchesSearch && matchesStatus;
     });
-
-    const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + itemsPerPage);
 
     if (loading) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)' }}>Loading appointments...</div>;
     if (error) return <div style={{ padding: '48px', textAlign: 'center', color: '#ef4444' }}>Error: {error}</div>;
@@ -88,21 +84,33 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                 <table className="data-table">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Patient</th>
+                            <th>Contact</th>
                             <th>Reason</th>
-                            <th>Appointment Time</th>
+                            <th>Schedule</th>
+                            <th>Location</th>
                             <th>Status</th>
                             <th>Reminder</th>
+                            <th>Created At</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {paginatedAppointments.map((apt) => (
+                        {filteredAppointments.map((apt) => (
                             <tr key={apt.id}>
                                 <td>
+                                    <span style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'monospace' }} title={apt.id}>
+                                        {apt.id.slice(0, 8)}...
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style={{ fontWeight: '700' }}>{apt.patient_name}</span>
+                                </td>
+                                <td>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: '700' }}>{apt.patient_name}</span>
-                                        <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{apt.email}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: '600' }}>{apt.phone}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{apt.email && apt.email !== 'EMPTY' ? apt.email : 'No email'}</span>
                                     </div>
                                 </td>
                                 <td>
@@ -115,27 +123,34 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                                     </div>
                                 </td>
                                 <td>
-                                    <Badge status={apt.status} />
+                                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: '500' }}>
+                                        {apt.location || 'N/A'}
+                                    </span>
                                 </td>
                                 <td>
-                                    {apt.reminder_status ? (
+                                    <Badge status={apt.status || 'booked'} />
+                                </td>
+                                <td>
+                                    {apt.reminder_sent === 'YES' ? (
                                         <span style={{
-                                            fontSize: '12px',
-                                            fontWeight: '600',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
                                             padding: '4px 8px',
                                             borderRadius: '6px',
-                                            backgroundColor: apt.reminder_status === 'sent' ? 'var(--status-booked-bg)' :
-                                                apt.reminder_status === 'failed' ? 'rgba(239, 68, 68, 0.1)' :
-                                                    apt.reminder_status === 'replied' ? 'var(--status-completed-bg)' : 'transparent',
-                                            color: apt.reminder_status === 'sent' ? 'var(--status-booked)' :
-                                                apt.reminder_status === 'failed' ? '#ef4444' :
-                                                    apt.reminder_status === 'replied' ? 'var(--status-completed)' : 'var(--muted)'
+                                            backgroundColor: 'var(--status-booked-bg)',
+                                            color: 'var(--status-booked)',
+                                            textTransform: 'uppercase'
                                         }}>
-                                            {apt.reminder_status.charAt(0).toUpperCase() + apt.reminder_status.slice(1)}
+                                            Sent
                                         </span>
                                     ) : (
                                         <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Pending</span>
                                     )}
+                                </td>
+                                <td>
+                                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                                        {safeFormat(apt.created_at, 'MMM dd, HH:mm')}
+                                    </span>
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
@@ -154,33 +169,9 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                         ))}
                     </tbody>
                 </table>
-                {paginatedAppointments.length === 0 && (
+                {filteredAppointments.length === 0 && (
                     <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)', fontStyle: 'italic' }}>No appointments found matching your criteria.</div>
                 )}
-            </div>
-
-            {/* Pagination Container */}
-            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', color: 'var(--muted)' }}>
-                <span>Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredAppointments.length)} of {filteredAppointments.length} appointments</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage((p) => p - 1)}
-                        className="btn"
-                        style={{ padding: '8px', backgroundColor: 'transparent', opacity: currentPage === 1 ? 0.3 : 1 }}
-                    >
-                        <ChevronLeft size={18} />
-                    </button>
-                    <span style={{ fontWeight: '700', margin: '0 8px' }}>Page {currentPage} of {totalPages || 1}</span>
-                    <button
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        onClick={() => setCurrentPage((p) => p + 1)}
-                        className="btn"
-                        style={{ padding: '8px', backgroundColor: 'transparent', opacity: (currentPage === totalPages || totalPages === 0) ? 0.3 : 1 }}
-                    >
-                        <ChevronRight size={18} />
-                    </button>
-                </div>
             </div>
         </div>
     );

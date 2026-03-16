@@ -11,11 +11,10 @@ export interface Appointment {
     email: string;
     reason_for_visit: string;
     appointment_time: string;
-    status: AppointmentStatus;
+    status: string | null;
     calendar_event_id?: string;
-    location_id?: string;
-    booking_channel?: 'Voice AI' | 'Phone' | 'Website' | 'Front Desk';
-    reminder_status?: 'sent' | 'failed' | 'replied' | 'none';
+    location?: string;
+    reminder_sent?: string;
     created_at: string;
     updated_at: string;
 }
@@ -35,7 +34,7 @@ export function useAppointments() {
                 .order('appointment_time', { ascending: true });
 
             if (selectedLocation && selectedLocation.id !== 'all') {
-                query = query.eq('location_id', selectedLocation.id);
+                query = query.ilike('location', selectedLocation.name);
             }
 
             const { data, error } = await query;
@@ -45,16 +44,8 @@ export function useAppointments() {
             // If data is empty and we are in demo mode, inject some demo data for the specific location
             let mappedData = (data || []).map(apt => ({
                 ...apt,
-                status: (apt.status || 'booked') as AppointmentStatus
+                status: apt.status || 'booked'
             }));
-
-            if (mappedData.length === 0 && selectedLocation?.id !== 'all') {
-                console.log('No data for location, injecting demo data');
-                mappedData = [
-                    { id: 'd1', patient_name: 'John Doe', phone: '555-0101', email: 'john@example.com', reason_for_visit: 'Checkup', appointment_time: new Date().toISOString(), status: 'booked', location_id: selectedLocation?.id, booking_channel: 'Voice AI', reminder_status: 'sent', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-                    { id: 'd2', patient_name: 'Jane Smith', phone: '555-0102', email: 'jane@example.com', reason_for_visit: 'Cleaning', appointment_time: new Date(Date.now() + 86400000).toISOString(), status: 'booked', location_id: selectedLocation?.id, booking_channel: 'Website', reminder_status: 'none', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-                ];
-            }
 
             setAppointments(mappedData);
         } catch (err: any) {
@@ -81,7 +72,7 @@ export function useAppointments() {
                     if (payload.eventType === 'INSERT') {
                         const newApt = { ...payload.new, status: (payload.new.status || 'booked') } as Appointment;
                         // Only add if it matches the current location filter
-                        if (!selectedLocation || selectedLocation.id === 'all' || newApt.location_id === selectedLocation.id) {
+                        if (!selectedLocation || selectedLocation.id === 'all' || newApt.location === selectedLocation.name) {
                             setAppointments((current) => [...current, newApt]);
                         }
                     } else if (payload.eventType === 'UPDATE') {
@@ -104,7 +95,7 @@ export function useAppointments() {
     const addAppointment = async (appointment: Partial<Appointment>) => {
         const { data, error } = await supabase
             .from(APPOINTMENTS_TABLE)
-            .insert([{ ...appointment, location_id: selectedLocation?.id !== 'all' ? selectedLocation?.id : 'clinic-north' }])
+            .insert([{ ...appointment, location: selectedLocation?.id !== 'all' ? selectedLocation?.name : undefined }])
             .select();
         if (error) throw error;
         return data;

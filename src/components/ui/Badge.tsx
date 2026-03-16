@@ -1,20 +1,24 @@
 import { AppointmentStatus } from '../../hooks/useAppointments';
 
 interface BadgeProps {
-    status: AppointmentStatus;
+    status: string | null;
 }
 
 export function Badge({ status }: BadgeProps) {
-    if (!status) return null;
+    if (!status) return (
+        <span className="badge" style={{ backgroundColor: 'var(--border)', color: 'var(--muted)' }}>
+            Pending
+        </span>
+    );
 
-    const styles: Record<AppointmentStatus, { color: string, bg: string }> = {
+    const styles: Record<string, { color: string, bg: string }> = {
         booked: { color: 'var(--status-booked)', bg: 'var(--status-booked-bg)' },
         cancelled: { color: 'var(--status-cancelled)', bg: 'var(--status-cancelled-bg)' },
         rescheduled: { color: 'var(--status-rescheduled)', bg: 'var(--status-rescheduled-bg)' },
         completed: { color: 'var(--status-completed)', bg: 'var(--status-completed-bg)' },
     };
 
-    const config = styles[status] || styles.booked;
+    const config = styles[status] || { color: 'var(--muted)', bg: 'var(--input)' };
 
     return (
         <span className="badge" style={{

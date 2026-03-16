@@ -18,7 +18,6 @@ function AppContent() {
     const { user, loading } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activePage, setActivePage] = useState('dashboard');
-    const [showNotifications, setShowNotifications] = useState(false);
 
     if (loading) {
         return (
@@ -82,8 +81,6 @@ function AppContent() {
                 <Navbar
                     isSidebarOpen={isSidebarOpen}
                     setIsSidebarOpen={setIsSidebarOpen}
-                    showNotifications={showNotifications}
-                    setShowNotifications={setShowNotifications}
                 />
 
                 <section className="content-area">

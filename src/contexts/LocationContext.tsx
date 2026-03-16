@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface Location {
     id: string;
@@ -21,17 +22,36 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Mocking multi-location data
-        const demoLocations: Location[] = [
-            { id: 'all', name: 'All Locations', city: 'Global' },
-            { id: 'clinic-north', name: 'DentalAI North', city: 'Seattle' },
-            { id: 'clinic-south', name: 'DentalAI South', city: 'Tacoma' },
-            { id: 'clinic-east', name: 'DentalAI East', city: 'Bellevue' },
-        ];
+        async function fetchLocations() {
+            try {
+                setLoading(true);
+                const { data, error } = await supabase
+                    .from('locations')
+                    .select('*')
+                    .order('name', { ascending: true });
 
-        setLocations(demoLocations);
-        setSelectedLocation(demoLocations[0]);
-        setLoading(false);
+                if (error) throw error;
+
+                const allOption: Location = { id: 'all', name: 'All Locations', city: 'Global' };
+                const fetchedLocations = data || [];
+                
+                // If no locations found, add some defaults or just the 'All' option
+                const finalLocations = [allOption, ...fetchedLocations];
+                
+                setLocations(finalLocations);
+                setSelectedLocation(allOption);
+            } catch (err) {
+                console.error('Error fetching locations:', err);
+                // Fallback to minimal set if fetch fails
+                const fallback = [{ id: 'all', name: 'All Locations', city: 'Global' }];
+                setLocations(fallback);
+                setSelectedLocation(fallback[0]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchLocations();
     }, []);
 
     return (

@@ -45,10 +45,11 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                         value={safeFormat(appointment.appointment_time, 'EEEE, MMMM dd, yyyy @ hh:mm a')}
                     />
                     <DetailItem icon={<FileText size={18} />} label="Reason for Visit" value={appointment.reason_for_visit} />
+                    <DetailItem icon={<Clock size={18} />} label="Location" value={appointment.location || 'N/A'} />
                     <DetailItem
                         icon={<Bell size={18} />}
-                        label="Reminder Status"
-                        value={appointment.reminder_status ? appointment.reminder_status.charAt(0).toUpperCase() + appointment.reminder_status.slice(1) : 'Pending'}
+                        label="Reminder Sent"
+                        value={appointment.reminder_sent === 'YES' ? 'Yes' : 'No'}
                     />
                 </div>
 
@@ -115,7 +116,7 @@ export function EditAppointmentModal({ isOpen, onClose, appointment, onSave }: E
             <form onSubmit={handleSubmit}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                     <InputGroup label="Patient Name" value={formData.patient_name || ''} onChange={(val) => setFormData({ ...formData, patient_name: val })} />
-                    <InputGroup label="Status" value={formData.status || ''} type="select" options={['booked', 'cancelled', 'rescheduled', 'completed']} onChange={(val) => setFormData({ ...formData, status: val as AppointmentStatus })} />
+                    <InputGroup label="Status" value={formData.status || ''} type="select" options={['booked', 'cancelled', 'rescheduled', 'completed']} onChange={(val) => setFormData({ ...formData, status: val })} />
                     <InputGroup label="Phone" value={formData.phone || ''} onChange={(val) => setFormData({ ...formData, phone: val })} />
                     <InputGroup label="Email" value={formData.email || ''} type="email" onChange={(val) => setFormData({ ...formData, email: val })} />
                 </div>
@@ -223,7 +224,7 @@ export function AddAppointmentModal({ isOpen, onClose, onSave }: AddModalProps) 
         }
         setIsSubmitting(true);
         try {
-            await onSave({ ...formData, booking_channel: 'Front Desk' });
+            await onSave(formData);
             setFormData({ status: 'booked', appointment_time: format(new Date(), "yyyy-MM-dd'T'10:00") });
             onClose();
         } catch (err) {

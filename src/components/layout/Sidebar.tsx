@@ -8,8 +8,7 @@ import {
     Settings,
     PhoneCall,
     HelpCircle,
-    AlertCircle,
-    Map
+    AlertCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -86,13 +85,6 @@ export function Sidebar({ isOpen, activePage, setActivePage }: SidebarProps) {
                     label="Analytics"
                     active={activePage === 'analytics'}
                     onClick={() => setActivePage('analytics')}
-                    isOpen={isOpen}
-                />
-                <NavItem
-                    icon={<Map size={20} />}
-                    label="Locations"
-                    active={activePage === 'locations'}
-                    onClick={() => setActivePage('locations')}
                     isOpen={isOpen}
                 />
                 <NavItem
