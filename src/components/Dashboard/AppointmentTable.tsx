@@ -2,8 +2,14 @@ import { useState } from 'react';
 import { Search, Eye, Edit3, Calendar, XCircle, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Appointment, useAppointments } from '../../hooks/useAppointments';
 import { Badge } from '../ui/Badge';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
+
+function safeFormat(dateStr: string | undefined | null, fmt: string, fallback = 'N/A'): string {
+    if (!dateStr) return fallback;
+    const d = new Date(dateStr);
+    return isValid(d) ? format(d, fmt) : fallback;
+}
 
 interface AppointmentTableProps {
     onView: (apt: Appointment) => void;
@@ -104,8 +110,8 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: '600' }}>{format(new Date(apt.appointment_time), 'MMM dd, yyyy')}</span>
-                                        <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{format(new Date(apt.appointment_time), 'hh:mm a')}</span>
+                                        <span style={{ fontWeight: '600' }}>{safeFormat(apt.appointment_time, 'MMM dd, yyyy')}</span>
+                                        <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{safeFormat(apt.appointment_time, 'hh:mm a')}</span>
                                     </div>
                                 </td>
                                 <td>

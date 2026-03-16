@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { Appointment, AppointmentStatus } from '../../hooks/useAppointments';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { User, Phone, Mail, FileText, Clock, AlertTriangle, Bell } from 'lucide-react';
+
+function safeFormat(dateStr: string | undefined | null, fmt: string, fallback = 'N/A'): string {
+    if (!dateStr) return fallback;
+    const d = new Date(dateStr);
+    return isValid(d) ? format(d, fmt) : fallback;
+}
 
 interface ViewModalProps {
     isOpen: boolean;
@@ -36,7 +42,7 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                     <DetailItem
                         icon={<Clock size={18} />}
                         label="Appointment Time"
-                        value={format(new Date(appointment.appointment_time), 'EEEE, MMMM dd, yyyy @ hh:mm a')}
+                        value={safeFormat(appointment.appointment_time, 'EEEE, MMMM dd, yyyy @ hh:mm a')}
                     />
                     <DetailItem icon={<FileText size={18} />} label="Reason for Visit" value={appointment.reason_for_visit} />
                     <DetailItem
@@ -47,8 +53,8 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                 </div>
 
                 <div style={{ paddingTop: '24px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Created: {format(new Date(appointment.created_at), 'MMM dd, yyyy HH:mm')}</span>
-                    <span>Last Updated: {format(new Date(appointment.updated_at), 'MMM dd, yyyy HH:mm')}</span>
+                    <span>Created: {safeFormat(appointment.created_at, 'MMM dd, yyyy HH:mm')}</span>
+                    <span>Last Updated: {safeFormat(appointment.updated_at, 'MMM dd, yyyy HH:mm')}</span>
                 </div>
             </div>
         </Modal>
@@ -163,7 +169,8 @@ export function RescheduleModal({ isOpen, onClose, appointment, onSave }: { isOp
 
     useEffect(() => {
         if (appointment) {
-            setNewTime(format(new Date(appointment.appointment_time), "yyyy-MM-dd'T'HH:mm"));
+            const formatted = safeFormat(appointment.appointment_time, "yyyy-MM-dd'T'HH:mm", '');
+            setNewTime(formatted);
         }
     }, [appointment]);
 

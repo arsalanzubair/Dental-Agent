@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useAppointments, Appointment } from '../hooks/useAppointments';
 import { AppointmentTable } from '../components/Dashboard/AppointmentTable';
-import { ViewAppointmentModal, EditAppointmentModal, DeleteConfirmationModal, RescheduleModal, AddAppointmentModal } from '../components/Dashboard/AppointmentModals';
-import { Users, CalendarCheck, CalendarX, CheckCircle2, Plus } from 'lucide-react';
+import { ViewAppointmentModal, EditAppointmentModal, DeleteConfirmationModal, RescheduleModal } from '../components/Dashboard/AppointmentModals';
+import { Users, CalendarCheck, CalendarX, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Dashboard() {
-    const { appointments, updateAppointment, deleteAppointment, addAppointment } = useAppointments();
+    const { appointments, updateAppointment, deleteAppointment } = useAppointments();
     const { role } = useAuth();
 
     // Modal States
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-    const [modalType, setModalType] = useState<'view' | 'edit' | 'delete' | 'reschedule' | 'add' | null>(null);
+    const [modalType, setModalType] = useState<'view' | 'edit' | 'delete' | 'reschedule' | null>(null);
 
     const stats = {
         total: appointments.length,
@@ -32,11 +32,6 @@ export function Dashboard() {
                     <h1 className="page-title">Appointment Dashboard</h1>
                     <p className="page-subtitle">Real-time monitoring and management of dental appointments.</p>
                 </div>
-                {role === 'Admin' && (
-                    <button className="btn btn-primary" onClick={() => setModalType('add')}>
-                        <Plus size={18} /> Book Appointment
-                    </button>
-                )}
             </header>
 
             <div className="stat-grid">
@@ -90,13 +85,6 @@ export function Dashboard() {
                 appointment={selectedAppointment}
             />
 
-            <AddAppointmentModal
-                isOpen={modalType === 'add'}
-                onClose={closeModal}
-                onSave={async (data) => {
-                    await addAppointment(data);
-                }}
-            />
 
             <EditAppointmentModal
                 isOpen={modalType === 'edit'}

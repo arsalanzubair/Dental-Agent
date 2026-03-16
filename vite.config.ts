@@ -10,5 +10,3 @@ export default defineConfig({
         strictPort: false, // Allow it to try 5174 if 5173 is temporarily locked
     }
 });
-// Force Vite reload
-
