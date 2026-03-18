@@ -141,25 +141,6 @@ export function Analytics() {
                     </div>
                 </div>
             </div>
-
-            <div className="card" style={{ marginTop: '24px', padding: '24px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '24px' }}>Booking Channels</h3>
-                <div style={{ height: '200px', width: '100%' }}>
-                    <ResponsiveContainer>
-                        <BarChart data={channelData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 700, fill: 'var(--foreground)' }} width={100} />
-                            <Tooltip cursor={{ fill: 'transparent' }} />
-                            <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={24}>
-                                {channelData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
         </div>
     );
 }

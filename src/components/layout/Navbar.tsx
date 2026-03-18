@@ -40,6 +40,23 @@ export function Navbar({
                 </div>
 
                 <div className="divider-v"></div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                    <MapPin size={18} style={{ color: 'var(--primary)' }} />
+                    <select
+                        className="search-input"
+                        style={{ padding: '8px 12px', minWidth: '160px', height: '40px' }}
+                        value={selectedLocation?.id || 'all'}
+                        onChange={(e) => {
+                            const loc = locations.find(l => l.id === e.target.value);
+                            setSelectedLocation(loc || null);
+                        }}
+                    >
+                        {locations.map(loc => (
+                            <option key={loc.id} value={loc.id}>{loc.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="navbar-right">

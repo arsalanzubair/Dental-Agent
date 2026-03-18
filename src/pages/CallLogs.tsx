@@ -120,13 +120,17 @@ export function CallLogs() {
 }
 
 function OutcomeBadge({ outcome }: { outcome: CallOutcome }) {
-    const config = {
+    const config: Record<string, { color: string, bg: string, label: string }> = {
         resolved: { color: 'var(--status-completed)', bg: 'var(--status-completed-bg)', label: 'Resolved' },
         transferred: { color: 'var(--status-booked)', bg: 'var(--status-booked-bg)', label: 'Transferred' },
-        abandoned: { color: 'var(--status-cancelled)', bg: 'var(--status-cancelled-bg)', label: 'Abandoned' }
+        abandoned: { color: 'var(--status-cancelled)', bg: 'var(--status-cancelled-bg)', label: 'Abandoned' },
+        booked: { color: 'var(--status-booked)', bg: 'var(--status-booked-bg)', label: 'Booked' },
+        cancelled: { color: 'var(--status-cancelled)', bg: 'var(--status-cancelled-bg)', label: 'Cancelled' },
+        rescheduled: { color: 'var(--status-rescheduled)', bg: 'var(--status-rescheduled-bg)', label: 'Rescheduled' },
+        completed: { color: 'var(--status-completed)', bg: 'var(--status-completed-bg)', label: 'Completed' },
     };
 
-    const { color, bg, label } = config[outcome];
+    const { color, bg, label } = config[outcome] || config.booked;
 
     return (
         <span className="badge" style={{ color, backgroundColor: bg, borderColor: 'transparent' }}>

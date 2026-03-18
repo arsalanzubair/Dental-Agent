@@ -8,7 +8,8 @@ import {
     Settings,
     PhoneCall,
     HelpCircle,
-    AlertCircle
+    AlertCircle,
+    MessageSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,13 +34,6 @@ export function Sidebar({ isOpen, activePage, setActivePage }: SidebarProps) {
 
             <nav className="nav-list" style={{ flex: 1, overflowY: 'auto' }}>
                 <SectionLabel isOpen={isOpen} label="Clinic Overview" />
-                <NavItem
-                    icon={<LayoutDashboard size={20} />}
-                    label="Dashboard"
-                    active={activePage === 'dashboard'}
-                    onClick={() => setActivePage('dashboard')}
-                    isOpen={isOpen}
-                />
                 <NavItem
                     icon={<Database size={20} />}
                     label="Appointments"
@@ -94,6 +88,13 @@ export function Sidebar({ isOpen, activePage, setActivePage }: SidebarProps) {
                     onClick={() => setActivePage('notifications')}
                     isOpen={isOpen}
                     badge={3}
+                />
+                <NavItem
+                    icon={<MessageSquare size={20} />}
+                    label="SMS Templates"
+                    active={activePage === 'sms-templates'}
+                    onClick={() => setActivePage('sms-templates')}
+                    isOpen={isOpen}
                 />
             </nav>
 

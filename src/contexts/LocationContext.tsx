@@ -23,32 +23,16 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         async function fetchLocations() {
-            try {
-                setLoading(true);
-                const { data, error } = await supabase
-                    .from('locations')
-                    .select('*')
-                    .order('name', { ascending: true });
-
-                if (error) throw error;
-
-                const allOption: Location = { id: 'all', name: 'All Locations', city: 'Global' };
-                const fetchedLocations = data || [];
-                
-                // If no locations found, add some defaults or just the 'All' option
-                const finalLocations = [allOption, ...fetchedLocations];
-                
-                setLocations(finalLocations);
-                setSelectedLocation(allOption);
-            } catch (err) {
-                console.error('Error fetching locations:', err);
-                // Fallback to minimal set if fetch fails
-                const fallback = [{ id: 'all', name: 'All Locations', city: 'Global' }];
-                setLocations(fallback);
-                setSelectedLocation(fallback[0]);
-            } finally {
-                setLoading(false);
-            }
+            setLoading(true);
+            const hardcodedLocations: Location[] = [
+                { id: 'all', name: 'All Locations', city: 'Global' },
+                { id: 'austin', name: 'AUSTIN', city: 'Austin' },
+                { id: 'newyork', name: 'NEW YORK', city: 'New York' },
+                { id: 'sanfrancisco', name: 'SAN FRANCISCO', city: 'San Francisco' }
+            ];
+            setLocations(hardcodedLocations);
+            setSelectedLocation(hardcodedLocations[0]);
+            setLoading(false);
         }
 
         fetchLocations();
