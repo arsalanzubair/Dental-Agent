@@ -13,24 +13,64 @@ import { SMSTemplates } from './pages/SMSTemplates';
 import { Settings } from './pages/Settings';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
+import { LocationProvider } from './contexts/LocationContext';
+import { AppointmentProvider } from './contexts/AppointmentContext';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 
 function AppContent() {
     const { theme } = useTheme();
     const { user, loading } = useAuth();
+    const { addNotification } = useNotifications();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activePage, setActivePage] = useState('appointments');
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'danger' | 'info' } | null>(null);
 
     useEffect(() => {
         const handleCancelEvent = (e: any) => {
             const apt = e.detail;
             const method = apt.canceled_via_sms ? 'via SMS' : '';
-            setToastMessage(`Patient ${apt.patient_name || 'unknown'} cancelled their appointment ${method}.`.replace('  ', ' '));
-            setTimeout(() => setToastMessage(null), 8000);
+            const msg = `Patient ${apt.patient_name || 'unknown'} cancelled their appointment ${method}.`.replace('  ', ' ');
+            setToast({ message: msg, type: 'danger' });
+            addNotification({
+                type: 'CANCELLED',
+                message: msg,
+                patientName: apt.patient_name
+            });
+            setTimeout(() => setToast(null), 8000);
+        };
+        const handleConfirmEvent = (e: any) => {
+            const apt = e.detail;
+            const msg = `Patient ${apt.patient_name || 'unknown'} confirmed their appointment via SMS.`;
+            setToast({ message: msg, type: 'success' });
+            addNotification({
+                type: 'CONFIRMED',
+                message: msg,
+                patientName: apt.patient_name
+            });
+            setTimeout(() => setToast(null), 8000);
+        };
+        const handleFollowUpEvent = (e: any) => {
+            const apt = e.detail;
+            const type = apt.follow_up_response_type === 'POSITIVE' ? 'Positive' : 
+                         apt.follow_up_response_type === 'NEGATIVE' ? 'Negative' : 'Response';
+            const msg = `${type} follow-up received from ${apt.patient_name || 'patient'}`;
+            setToast({ message: msg, type: apt.follow_up_response_type === 'NEGATIVE' ? 'danger' : 'success' });
+            addNotification({
+                type: apt.follow_up_response_type === 'NEGATIVE' ? 'NEGATIVE' : 'POSITIVE',
+                message: msg,
+                patientName: apt.patient_name
+            });
+            setTimeout(() => setToast(null), 8000);
         };
         window.addEventListener('appointment-cancelled', handleCancelEvent);
-        return () => window.removeEventListener('appointment-cancelled', handleCancelEvent);
-    }, []);
+        window.addEventListener('appointment-confirmed', handleConfirmEvent);
+        window.addEventListener('follow-up-received', handleFollowUpEvent);
+        return () => {
+            window.removeEventListener('appointment-cancelled', handleCancelEvent);
+            window.removeEventListener('appointment-confirmed', handleConfirmEvent);
+            window.removeEventListener('follow-up-received', handleFollowUpEvent);
+        };
+    }, [addNotification]);
 
     if (loading) {
         return (
@@ -96,16 +136,17 @@ function AppContent() {
                     setIsSidebarOpen={setIsSidebarOpen}
                 />
 
-                {toastMessage && (
+                {toast && (
                     <div style={{
                         position: 'absolute', top: '16px', right: '16px', zIndex: 9999,
-                        background: '#ef4444', color: 'white', padding: '16px 24px',
+                        background: toast.type === 'danger' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3b82f6', 
+                        color: 'white', padding: '16px 24px',
                         borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                         display: 'flex', alignItems: 'center', gap: '12px',
                         animation: 'fadeIn 0.3s ease-out'
                     }}>
-                        <span style={{ fontWeight: '700' }}>Notification:</span> {toastMessage}
-                        <button onClick={() => setToastMessage(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', marginLeft: '12px', opacity: 0.8 }}>✕</button>
+                        <span style={{ fontWeight: '700' }}>{toast.type.toUpperCase()}:</span> {toast.message}
+                        <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', marginLeft: '12px', opacity: 0.8 }}>✕</button>
                     </div>
                 )}
 
@@ -117,8 +158,7 @@ function AppContent() {
     );
 }
 
-import { LocationProvider } from './contexts/LocationContext';
-import { AppointmentProvider } from './contexts/AppointmentContext';
+
 
 function App() {
     return (
@@ -126,7 +166,9 @@ function App() {
             <AuthProvider>
                 <LocationProvider>
                     <AppointmentProvider>
-                        <AppContent />
+                        <NotificationProvider>
+                            <AppContent />
+                        </NotificationProvider>
                     </AppointmentProvider>
                 </LocationProvider>
             </AuthProvider>

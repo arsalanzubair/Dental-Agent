@@ -91,6 +91,9 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                             <th>Schedule</th>
                             <th>Location</th>
                             <th>Status</th>
+                            <th>Confirm</th>
+                            <th>SMS</th>
+                            <th>Response</th>
                             <th>Reminder</th>
                             <th>Created At</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
@@ -129,6 +132,27 @@ export function AppointmentTable({ onView, onEdit, onReschedule, onCancel, onDel
                                 </td>
                                 <td>
                                     <Badge status={apt.status || 'booked'} />
+                                </td>
+                                <td>
+                                    {apt.confirmation_status === 'CONFIRMED' ? (
+                                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--status-completed)', backgroundColor: 'var(--status-completed-bg)', padding: '2px 8px', borderRadius: '4px' }}>CONFIRMED</span>
+                                    ) : (
+                                        <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--muted)' }}>{apt.confirmation_status || 'PENDING'}</span>
+                                    )}
+                                </td>
+                                <td>
+                                    {apt.canceled_via_sms ? (
+                                        <div title="Cancelled via SMS" style={{ display: 'flex', alignItems: 'center', color: '#ef4444' }}>
+                                            <XCircle size={14} />
+                                        </div>
+                                    ) : (
+                                        <span style={{ color: '#10b981' }}>—</span>
+                                    )}
+                                </td>
+                                <td>
+                                    <span style={{ fontSize: '11px', color: 'var(--muted)', maxWidth: '120px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={apt.feedback_text || ''}>
+                                        {apt.feedback_text || '—'}
+                                    </span>
                                 </td>
                                 <td>
                                     {apt.reminder_sent === 'YES' ? (

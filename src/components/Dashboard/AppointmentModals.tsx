@@ -3,7 +3,7 @@ import { Appointment, AppointmentStatus } from '../../hooks/useAppointments';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
 import { format, isValid } from 'date-fns';
-import { User, Phone, Mail, FileText, Clock, AlertTriangle, Bell } from 'lucide-react';
+import { User, Phone, Mail, FileText, Clock, AlertTriangle, Bell, MessageSquare, CheckCircle, XCircle, Star } from 'lucide-react';
 
 function safeFormat(dateStr: string | undefined | null, fmt: string, fallback = 'N/A'): string {
     if (!dateStr) return fallback;
@@ -33,7 +33,7 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                             <p style={{ fontSize: '12px', color: 'var(--muted)' }}>ID: {appointment.id.slice(0, 8)}</p>
                         </div>
                     </div>
-                    <Badge status={appointment.status} />
+                    <Badge status={appointment.status as any} />
                 </div>
 
                 <div className="detail-grid">
@@ -45,7 +45,6 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                         value={safeFormat(appointment.appointment_time, 'EEEE, MMMM dd, yyyy @ hh:mm a')}
                     />
                     <DetailItem icon={<FileText size={18} />} label="Reason for Visit" value={appointment.reason_for_visit} />
-                    <DetailItem icon={<Clock size={18} />} label="Location" value={appointment.location || 'N/A'} />
                     <DetailItem
                         icon={<Bell size={18} />}
                         label="Reminder Sent"
@@ -53,7 +52,43 @@ export function ViewAppointmentModal({ isOpen, onClose, appointment }: ViewModal
                     />
                 </div>
 
-                <div style={{ paddingTop: '24px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MessageSquare size={16} style={{ color: 'var(--primary)' }} />
+                        Follow-up & Activity Log
+                    </h5>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {appointment.confirmation_status && (
+                            <ActivityItem 
+                                icon={<CheckCircle size={14} />} 
+                                color="var(--status-completed)" 
+                                label="Confirmation Status" 
+                                value={appointment.confirmation_status} 
+                            />
+                        )}
+                        {appointment.canceled_via_sms && (
+                            <ActivityItem 
+                                icon={<XCircle size={14} />} 
+                                color="#ef4444" 
+                                label="Action" 
+                                value="Cancelled via SMS Response" 
+                            />
+                        )}
+                        {(appointment as any).feedback_text && (
+                            <ActivityItem 
+                                icon={<Star size={14} />} 
+                                color="#f59e0b" 
+                                label="Patient Feedback" 
+                                value={(appointment as any).feedback_text} 
+                            />
+                        )}
+                        {!appointment.confirmation_status && !appointment.canceled_via_sms && !(appointment as any).feedback_text && (
+                            <p style={{ fontSize: '13px', color: 'var(--muted)', fontStyle: 'italic' }}>No activity logged yet.</p>
+                        )}
+                    </div>
+                </div>
+
+                <div style={{ paddingTop: '24px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--muted)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Created: {safeFormat(appointment.created_at, 'MMM dd, yyyy HH:mm')}</span>
                     <span>Last Updated: {safeFormat(appointment.updated_at, 'MMM dd, yyyy HH:mm')}</span>
                 </div>
@@ -254,6 +289,27 @@ export function AddAppointmentModal({ isOpen, onClose, onSave }: AddModalProps) 
                 </div>
             </form>
         </Modal>
+    );
+}
+
+function ActivityItem({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color?: string }) {
+    return (
+        <div style={{ 
+            display: 'flex', alignItems: 'flex-start', gap: '12px', 
+            padding: '12px', backgroundColor: 'var(--background)', borderRadius: '10px',
+            border: '1px solid var(--border)' 
+        }}>
+            <div style={{ 
+                marginTop: '2px', color: color || 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                {icon}
+            </div>
+            <div>
+                <p style={{ fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</p>
+                <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--foreground)' }}>{value}</p>
+            </div>
+        </div>
     );
 }
 

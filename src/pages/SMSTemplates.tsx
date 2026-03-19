@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, RotateCcw, MessageSquare, Info, Type, Calendar, MessageCircle, Star } from 'lucide-react';
 import { useSMSTemplates, SMSTemplate } from '../hooks/useSMSTemplates';
+import { TokenEditor } from '../components/shared/TokenEditor';
 
 const TEMPLATE_CATEGORIES = [
     {
@@ -13,7 +14,7 @@ const TEMPLATE_CATEGORIES = [
         id: 'reminders_responses',
         name: 'Reminder & SMS Response',
         icon: <MessageSquare size={18} />,
-        templates: ['appointment_reminder', 'sms_confirmation_success', 'sms_cancellation_success', 'sms_fallback']
+        templates: ['appointment_reminder', 'appointment_reminder2', 'sms_confirmation_success', 'sms_cancellation_success', 'sms_fallback']
     },
     {
         id: 'feedback',
@@ -205,17 +206,10 @@ export function SMSTemplates() {
                                 {smsText.length} / 160
                             </div>
                         </div>
-                        <textarea
-                            style={{
-                                width: '100%', minHeight: '320px', padding: '20px', borderRadius: '14px',
-                                border: '1px solid var(--border)', backgroundColor: 'var(--input)',
-                                color: 'var(--foreground)', fontSize: '15px', lineHeight: '1.6',
-                                resize: 'vertical', outline: 'none', transition: 'border-color 0.2s',
-                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                            }}
-                            placeholder="Enter SMS message content..."
+                        <TokenEditor
                             value={smsText}
-                            onChange={(e) => setSmsText(e.target.value)}
+                            onChange={(val) => setSmsText(val)}
+                            placeholder="Enter SMS message content..."
                         />
                     </div>
 

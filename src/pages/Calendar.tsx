@@ -1,117 +1,200 @@
 import { useState } from 'react';
 import Calendar from 'react-calendar';
 import { useAppointments, Appointment } from '../hooks/useAppointments';
+import { useSettings } from '../hooks/useSettings';
 import { Badge } from '../components/ui/Badge';
-import { format, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon } from 'lucide-react';
+import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, isToday, startOfDay, addMinutes, isWithinInterval } from 'date-fns';
+import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Grid, List, Columns } from 'lucide-react';
 import 'react-calendar/dist/Calendar.css';
 
 export function CalendarView() {
     const { appointments, loading } = useAppointments();
+    const { settings } = useSettings();
     const [date, setDate] = useState<Date>(new Date());
-    const [selectedAppointments, setSelectedAppointments] = useState<Appointment[]>([]);
+    const [view, setView] = useState<'day' | 'week' | 'month'>('week');
 
     const appointmentsOnDate = (d: Date) => appointments.filter(a => isSameDay(new Date(a.appointment_time), d));
 
-    const handleDateChange = (newDate: any) => {
-        setDate(newDate);
-        setSelectedAppointments(appointmentsOnDate(newDate));
+    const handlePrev = () => {
+        if (view === 'day') setDate(subDays(date, 1));
+        else if (view === 'week') setDate(subDays(date, 7));
+        else setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
     };
 
-    // Mark tiles with dots if they have appointments
-    const tileContent = ({ date: cellDate, view }: { date: Date, view: string }) => {
-        if (view === 'month') {
-            const dayApts = appointmentsOnDate(cellDate);
-            if (dayApts.length > 0) {
-                return (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', gap: '2px' }}>
-                        {dayApts.slice(0, 3).map((a, i) => (
-                            <div key={i} style={{
-                                width: '4px',
-                                height: '4px',
-                                borderRadius: '50%',
-                                backgroundColor: i === 0 ? 'var(--primary)' : i === 1 ? 'var(--secondary)' : '#f59e0b'
-                            }} />
-                        ))}
-                    </div>
-                );
-            }
-        }
-        return null;
+    const handleNext = () => {
+        if (view === 'day') setDate(addDays(date, 1));
+        else if (view === 'week') setDate(addDays(date, 7));
+        else setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
     };
 
-    if (loading) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)' }}>Loading calendar...</div>;
+    const handleToday = () => setDate(new Date());
+
+    if (loading || !settings) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted)' }}>Loading schedule...</div>;
+
+    const days = view === 'week' 
+        ? eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) })
+        : [date];
+
+    const timeSlots: string[] = [];
+    for (let i = 8 * 60; i < 20 * 60; i += settings.slot_duration) {
+        const h = Math.floor(i / 60);
+        const m = i % 60;
+        timeSlots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+    }
 
     return (
         <div className="animate-up">
-            <header style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.02em' }}>Schedule Calendar</h1>
-                <p style={{ color: 'var(--muted)', marginTop: '4px' }}>View and manage appointments in a monthly view.</p>
+            <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.02em' }}>Schedule Calendar</h1>
+                    <p style={{ color: 'var(--muted)', marginTop: '4px' }}>Manage clinic appointments and availability.</p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <div className="card" style={{ padding: '4px', display: 'flex', gap: '4px', backgroundColor: 'var(--background)' }}>
+                        <ViewBtn active={view === 'day'} onClick={() => setView('day')} icon={<List size={16} />} label="Day" />
+                        <ViewBtn active={view === 'week'} onClick={() => setView('week')} icon={<Columns size={16} />} label="Week" />
+                        <ViewBtn active={view === 'month'} onClick={() => setView('month')} icon={<Grid size={16} />} label="Month" />
+                    </div>
+                </div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', alignItems: 'start' }}>
-                <div className="card" style={{ padding: '24px' }}>
-                    <Calendar
-                        onChange={handleDateChange}
-                        value={date}
-                        tileContent={tileContent}
-                        className="font-sans"
-                        prevLabel={<ChevronLeft size={20} />}
-                        nextLabel={<ChevronRight size={20} />}
-                        prev2Label={null}
-                        next2Label={null}
-                    />
+            <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '800' }}>
+                            {view === 'month' ? format(date, 'MMMM yyyy') : 
+                             view === 'week' ? `${format(startOfWeek(date), 'MMM d')} - ${format(endOfWeek(date), 'MMM d, yyyy')}` :
+                             format(date, 'MMMM d, yyyy')}
+                        </h2>
+                        <button onClick={handleToday} className="btn-text" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)' }}>Today</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={handlePrev} className="btn" style={{ padding: '8px' }}><ChevronLeft size={20} /></button>
+                        <button onClick={handleNext} className="btn" style={{ padding: '8px' }}><ChevronRight size={20} /></button>
+                    </div>
                 </div>
 
-                <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '500px' }}>
-                    <div style={{ marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{format(date, 'MMMM dd, yyyy')}</h3>
-                        <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px' }}>{selectedAppointments.length} Appointments scheduled</p>
+                {view === 'month' ? (
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <Calendar 
+                            onChange={(d: any) => setDate(d as Date)} 
+                            value={date}
+                            className="font-sans"
+                            tileContent={({ date: d, view: v }: { date: Date, view: string }) => {
+                                if (v !== 'month') return null;
+                                const count = appointmentsOnDate(d).length;
+                                if (count === 0) return null;
+                                return <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: '800', color: 'var(--primary)' }}>{count} apts</div>;
+                            }}
+                        />
                     </div>
-
-                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {selectedAppointments.length > 0 ? (
-                            selectedAppointments.map(apt => (
-                                <div key={apt.id} style={{
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border)',
-                                    backgroundColor: 'var(--background)',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                        <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--primary)' }}>{format(new Date(apt.appointment_time), 'hh:mm a')}</span>
-                                        <Badge status={apt.status} />
-                                    </div>
-                                    <h4 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>{apt.patient_name}</h4>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--muted)' }}>
-                                        <Clock size={14} />
-                                        <span>{apt.reason_for_visit}</span>
-                                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '0', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                        {/* Time Gutter */}
+                        <div style={{ backgroundColor: 'var(--background)', borderRight: '1px solid var(--border)' }}>
+                            <div style={{ height: '50px', borderBottom: '1px solid var(--border)' }} />
+                            {timeSlots.map(time => (
+                                <div key={time} style={{ height: '60px', padding: '8px', fontSize: '11px', fontWeight: '700', color: 'var(--muted)', textAlign: 'right', borderBottom: '1px solid var(--border-light)' }}>
+                                    {time}
                                 </div>
-                            ))
-                        ) : (
-                            <div style={{
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                textAlign: 'center',
-                                padding: '32px',
-                                border: '2px dashed var(--border)',
-                                borderRadius: '16px',
-                                color: 'var(--muted)',
-                                fontStyle: 'italic'
-                            }}>
-                                <CalendarIcon size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                                <p>No appointments for this day.</p>
-                            </div>
-                        )}
+                            ))}
+                        </div>
+
+                        {/* Days Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${days.length}, 1fr)`, backgroundColor: 'var(--card-bg)' }}>
+                            {days.map(d => {
+                                const dayName = format(d, 'EEEE').toLowerCase();
+                                const isWorkingDay = settings.business_hours[dayName]?.enabled;
+                                const apts = appointmentsOnDate(d);
+
+                                return (
+                                    <div key={d.toString()} style={{ borderRight: '1px solid var(--border-light)', position: 'relative' }}>
+                                        <div style={{ 
+                                            height: '50px', padding: '12px', textAlign: 'center', 
+                                            borderBottom: '1px solid var(--border)',
+                                            backgroundColor: isToday(d) ? 'var(--primary-light)' : 'transparent',
+                                            color: isToday(d) ? 'var(--primary)' : 'inherit'
+                                        }}>
+                                            <div style={{ fontSize: '11px', fontWeight: '700', opacity: 0.6 }}>{format(d, 'EEE').toUpperCase()}</div>
+                                            <div style={{ fontSize: '16px', fontWeight: '800' }}>{format(d, 'd')}</div>
+                                        </div>
+
+                                        <div style={{ position: 'relative', height: `${timeSlots.length * 60}px`, backgroundColor: isWorkingDay ? 'transparent' : 'var(--background-alt)', opacity: isWorkingDay ? 1 : 0.4 }}>
+                                            {/* Time segments */}
+                                            {timeSlots.map((_, i) => (
+                                                <div key={i} style={{ height: '60px', borderBottom: '1px solid var(--border-light)' }} />
+                                            ))}
+
+                                            {/* Appointments */}
+                                            {apts.map(apt => {
+                                                const aptTime = new Date(apt.appointment_time);
+                                                const aptType = settings.appointment_types.find(t => t.name === apt.reason_for_visit) || settings.appointment_types[0];
+                                                const startHour = aptTime.getHours();
+                                                const startMin = aptTime.getMinutes();
+                                                
+                                                // Calculate top position based on 8 AM start (480 mins)
+                                                const totalMins = (startHour * 60 + startMin) - (8 * 60);
+                                                const top = (totalMins / 60) * 60;
+                                                const height = (aptType.duration / 60) * 60;
+
+                                                return (
+                                                    <div 
+                                                        key={apt.id}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: `${top}px`,
+                                                            left: '4px',
+                                                            right: '4px',
+                                                            height: `${height}px`,
+                                                            backgroundColor: aptType.color + '20',
+                                                            borderLeft: `4px solid ${aptType.color}`,
+                                                            borderRadius: '4px',
+                                                            padding: '8px',
+                                                            fontSize: '11px',
+                                                            zIndex: 10,
+                                                            overflow: 'hidden',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <div style={{ fontWeight: '800', color: aptType.color }}>{format(aptTime, 'h:mm a')}</div>
+                                                        <div style={{ fontWeight: '700', marginTop: '2px' }}>{apt.patient_name}</div>
+                                                        <div style={{ fontSize: '10px', opacity: 0.7 }}>{aptType.name}</div>
+                                                        {apt.confirmation_status === 'CONFIRMED' && (
+                                                            <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
+                                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--status-completed)' }} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
+    );
+}
+
+function ViewBtn({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) {
+    return (
+        <button 
+            onClick={onClick}
+            style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px', borderRadius: '8px', border: 'none',
+                backgroundColor: active ? 'var(--primary)' : 'transparent',
+                color: active ? 'white' : 'var(--muted)',
+                fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                transition: 'all 0.2s'
+            }}
+        >
+            {icon} {label}
+        </button>
     );
 }

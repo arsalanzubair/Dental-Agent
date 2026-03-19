@@ -17,6 +17,11 @@ export interface Appointment {
     reminder_sent?: string;
     canceled_via_sms?: boolean;
     confirmation_status?: string | null;
+    confirmation_received_at?: string | null;
+    follow_up_sent?: boolean;
+    follow_up_response?: string | null;
+    follow_up_response_type?: 'POSITIVE' | 'NEGATIVE' | null;
+    feedback_text?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -94,10 +99,24 @@ export function AppointmentProvider({ children }: { children: React.ReactNode })
                             const oldApt = current.find(a => a.id === payload.new.id);
                             const isNewSmsCancel = payload.new.canceled_via_sms === true && (!oldApt || !oldApt.canceled_via_sms);
                             const isStatusCancel = updatedApt.status === 'cancelled' && (!oldApt || oldApt.status !== 'cancelled');
+                            const isNewConfirm = payload.new.confirmation_status === 'CONFIRMED' && (!oldApt || oldApt.confirmation_status !== 'CONFIRMED');
+                            const isNewFollowUp = payload.new.follow_up_response && (!oldApt || !oldApt.follow_up_response);
 
                             if (isNewSmsCancel || isStatusCancel) {
                                 window.dispatchEvent(new CustomEvent('appointment-cancelled', { 
                                     detail: { ...updatedApt, canceled_via_sms: payload.new.canceled_via_sms } 
+                                }));
+                            }
+
+                            if (isNewConfirm) {
+                                window.dispatchEvent(new CustomEvent('appointment-confirmed', { 
+                                    detail: updatedApt 
+                                }));
+                            }
+
+                            if (isNewFollowUp) {
+                                window.dispatchEvent(new CustomEvent('follow-up-received', { 
+                                    detail: updatedApt 
                                 }));
                             }
                             return current.map((apt) => (apt.id === payload.new.id ? updatedApt : apt));
