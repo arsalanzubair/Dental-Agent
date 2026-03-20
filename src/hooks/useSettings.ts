@@ -64,7 +64,14 @@ export function useSettings() {
         try {
             const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (stored) {
-                setSettings(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                // Merge with defaults to ensure new fields (like business_hours) exist
+                setSettings({
+                    ...DEFAULT_SETTINGS,
+                    ...parsed,
+                    business_hours: { ...DEFAULT_SETTINGS.business_hours, ...(parsed.business_hours || {}) },
+                    appointment_types: parsed.appointment_types || DEFAULT_SETTINGS.appointment_types
+                });
             } else {
                 setSettings(DEFAULT_SETTINGS);
             }

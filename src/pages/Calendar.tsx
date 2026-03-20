@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import Calendar from 'react-calendar';
-import { useAppointments, Appointment } from '../hooks/useAppointments';
+import { useAppointments } from '../hooks/useAppointments';
 import { useSettings } from '../hooks/useSettings';
-import { Badge } from '../components/ui/Badge';
-import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, isToday, startOfDay, addMinutes, isWithinInterval } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Grid, List, Columns } from 'lucide-react';
+import { format, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, isToday } from 'date-fns';
+import { ChevronLeft, ChevronRight, List, Grid, Columns } from 'lucide-react';
 import 'react-calendar/dist/Calendar.css';
 
 export function CalendarView() {
@@ -36,7 +35,8 @@ export function CalendarView() {
         : [date];
 
     const timeSlots: string[] = [];
-    for (let i = 8 * 60; i < 20 * 60; i += settings.slot_duration) {
+    const slotDuration = settings.slot_duration || 15;
+    for (let i = 8 * 60; i < 20 * 60; i += slotDuration) {
         const h = Math.floor(i / 60);
         const m = i % 60;
         timeSlots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
@@ -105,7 +105,7 @@ export function CalendarView() {
                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${days.length}, 1fr)`, backgroundColor: 'var(--card-bg)' }}>
                             {days.map(d => {
                                 const dayName = format(d, 'EEEE').toLowerCase();
-                                const isWorkingDay = settings.business_hours[dayName]?.enabled;
+                                const isWorkingDay = settings.business_hours?.[dayName]?.enabled;
                                 const apts = appointmentsOnDate(d);
 
                                 return (
@@ -129,14 +129,15 @@ export function CalendarView() {
                                             {/* Appointments */}
                                             {apts.map(apt => {
                                                 const aptTime = new Date(apt.appointment_time);
-                                                const aptType = settings.appointment_types.find(t => t.name === apt.reason_for_visit) || settings.appointment_types[0];
+                                                const aptTypes = settings.appointment_types || [];
+                                                const aptType = aptTypes.find(t => t.name === apt.reason_for_visit) || aptTypes[0] || { color: '#3b82f6', duration: 30, name: 'Other' };
                                                 const startHour = aptTime.getHours();
                                                 const startMin = aptTime.getMinutes();
                                                 
                                                 // Calculate top position based on 8 AM start (480 mins)
-                                                const totalMins = (startHour * 60 + startMin) - (8 * 60);
+                                                const totalMins = (startHour * 60 + startMin) - (480);
                                                 const top = (totalMins / 60) * 60;
-                                                const height = (aptType.duration / 60) * 60;
+                                                const height = ((aptType.duration || 30) / 60) * 60;
 
                                                 return (
                                                     <div 
